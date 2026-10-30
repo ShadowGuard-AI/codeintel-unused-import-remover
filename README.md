@@ -1,3 +1,5 @@
+![Banner](banner.png)
+
 # codeintel-Unused-Import-Remover
 Removes unused import statements from Python code to reduce code clutter and improve readability. - Focused on Tools for static code analysis, vulnerability scanning, and code quality assurance
 
