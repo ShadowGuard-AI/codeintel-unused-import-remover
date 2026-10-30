@@ -1,4 +1,4 @@
-bandit>=1.0.0
-flake8>=1.0.0
-pylint>=1.0.0
-pyre-check>=1.0.0
+# Nothing to install: main.py uses only the standard library
+# (argparse, ast, logging, os, sys, traceback). bandit, flake8,
+# pylint and pyre-check stood here before; the remover parses
+# with ast itself and never ran any of them.

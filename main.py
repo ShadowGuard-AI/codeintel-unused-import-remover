@@ -50,45 +50,56 @@ def find_unused_imports(filepath, aggressive=False):
             content = f.read()
     except FileNotFoundError:
         logging.error(f"File not found: {filepath}")
-        return [], None
+        return None, None
     except IOError as e:
         logging.error(f"Error reading file: {filepath} - {e}")
-        return [], None
+        return None, None
 
     try:
         tree = ast.parse(content)
     except SyntaxError as e:
         logging.error(f"Syntax error in file: {filepath} - {e}")
-        return [], None
+        return None, None
 
-    all_names = set()
+    # Used roots: every Name id in the file. An attribute chain such as
+    # os.path.join still bottoms out in a Name (os), so collecting Name
+    # ids is enough; there is no need to rebuild dotted strings.
+    used_names = set()
     for node in ast.walk(tree):
         if isinstance(node, ast.Name):
-            all_names.add(node.id)
-        elif isinstance(node, ast.Attribute):
-            # Handle attributes like obj.attribute
-            name = ""
-            current_node = node
-            while isinstance(current_node, ast.Attribute):
-                name = "." + current_node.attr + name
-                current_node = current_node.value
+            used_names.add(node.id)
 
-            if isinstance(current_node, ast.Name):
-                name = current_node.id + name
-                all_names.add(name)
+    if not aggressive:
+        # Safety net for indirect use: a binding mentioned inside a
+        # string (a lazy import path, a __all__ style export list, a
+        # getattr target) is kept. --aggressive is the opt-in to drop
+        # that net, which is what the flag now actually changes.
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Constant) and isinstance(node.value, str):
+                for word in node.value.replace(".", " ").replace("'", " ").split():
+                    used_names.add(word)
 
+    lines = content.splitlines()
     unused_imports = []
     for node in ast.walk(tree):
-        if isinstance(node, (ast.Import, ast.ImportFrom)):
-            for alias in node.names:
-                imported_name = alias.asname or alias.name
-                if imported_name not in all_names:
-                    lineno = node.lineno
-                    end_col_offset = node.end_col_offset
-                    start_col_offset = node.col_offset
-                    
-                    import_statement = content[content.rfind('\n', 0, node.lineno -1) + 1:content.find('\n', node.lineno -1)] if node.lineno > 1 else content[:content.find('\n', node.lineno -1)]
-                    unused_imports.append((lineno, import_statement))
+        if not isinstance(node, (ast.Import, ast.ImportFrom)):
+            continue
+        bindings = []
+        for alias in node.names:
+            if alias.name == "*":
+                continue  # a star import binds names this pass cannot list
+            # "import os.path" binds os; "from m import x as y" binds y.
+            bindings.append(alias.asname or alias.name.split(".")[0])
+        if not bindings:
+            continue
+        # Invariant for the remover below: a line is only ever dropped
+        # whole. If one alias on a shared line is still used, the line
+        # stays, because deleting it would delete the used import too
+        # (the old per-alias loop did exactly that and broke the file).
+        if any(name in used_names for name in bindings):
+            continue
+        statement = lines[node.lineno - 1].strip() if node.lineno <= len(lines) else ""
+        unused_imports.append((node.lineno, statement, getattr(node, "end_lineno", node.lineno) or node.lineno))
     return unused_imports, tree
 
 def remove_unused_imports(filepath, unused_imports, dry_run=False):
@@ -113,8 +124,10 @@ def remove_unused_imports(filepath, unused_imports, dry_run=False):
         return
 
     lines_to_remove = set()
-    for line_number, import_statement in unused_imports:
-        lines_to_remove.add(line_number)
+    for line_number, _statement, end_line in unused_imports:
+        # Parenthesized from-imports span several lines; the whole
+        # span has to go or the file is left with a dangling bracket.
+        lines_to_remove.update(range(line_number, end_line + 1))
 
     new_lines = [
         line for i, line in enumerate(lines, 1) if i not in lines_to_remove
@@ -122,20 +135,19 @@ def remove_unused_imports(filepath, unused_imports, dry_run=False):
 
     if dry_run:
         logging.info("Dry run: The following import statements would be removed:")
-        for line_number, import_statement in unused_imports:
+        for line_number, import_statement, _end in unused_imports:
             logging.info(f"Line {line_number}: {import_statement.strip()}")
     else:
         try:
             with open(filepath, "w") as f:
                 f.writelines(new_lines)
             logging.info(f"Removed unused imports from {filepath}")
-            for line_number, import_statement in unused_imports:
+            for line_number, import_statement, _end in unused_imports:
                 logging.info(f"Removed: Line {line_number}: {import_statement.strip()}")
-
 
         except IOError as e:
             logging.error(f"Error writing to file: {filepath} - {e}")
-            
+
 
 def main():
     """
@@ -158,6 +170,10 @@ def main():
     
     try:
         unused_imports, _ = find_unused_imports(filepath, aggressive)
+        if unused_imports is None:
+            # The file could not be read or parsed. Reporting success
+            # here would claim a clean file that was never examined.
+            sys.exit(1)
         remove_unused_imports(filepath, unused_imports, dry_run)
     except Exception as e:
         logging.error(f"An unexpected error occurred: {e}")
