@@ -2,6 +2,7 @@ import argparse
 import ast
 import logging
 import os
+import shutil
 import sys
 import traceback
 
@@ -22,7 +23,7 @@ def setup_argparse():
     parser.add_argument(
         "--dry-run",
         action="store_true",
-        help="Perform a dry run without modifying the file.",
+        help="Perform a dry run without modifying the file. A run that does modify the file first writes a backup copy next to it, named with a .bak suffix, and refuses to run if that backup already exists.",
     )
     parser.add_argument(
         "--aggressive",
@@ -80,10 +81,19 @@ def find_unused_imports(filepath, aggressive=False):
                     used_names.add(word)
 
     lines = content.splitlines()
+    # Statements per physical line. Two statements joined by a
+    # semicolon share one line, and the remover below drops whole
+    # lines, so an unused import on such a line cannot be removed
+    # without dropping the other statement with it.
+    statements_per_line = {}
+    for node in ast.walk(tree):
+        if isinstance(node, ast.stmt):
+            statements_per_line[node.lineno] = statements_per_line.get(node.lineno, 0) + 1
     unused_imports = []
     for node in ast.walk(tree):
         if not isinstance(node, (ast.Import, ast.ImportFrom)):
             continue
+
         bindings = []
         for alias in node.names:
             if alias.name == "*":
@@ -99,6 +109,11 @@ def find_unused_imports(filepath, aggressive=False):
         if any(name in used_names for name in bindings):
             continue
         statement = lines[node.lineno - 1].strip() if node.lineno <= len(lines) else ""
+        if statements_per_line.get(node.lineno, 0) > 1 or ";" in statement:
+            logging.info(
+                f"Skipped for safety: Line {node.lineno}: {statement} (shares a line with another statement)"
+            )
+            continue
         unused_imports.append((node.lineno, statement, getattr(node, "end_lineno", node.lineno) or node.lineno))
     return unused_imports, tree
 
@@ -111,17 +126,21 @@ def remove_unused_imports(filepath, unused_imports, dry_run=False):
         unused_imports (list): A list of tuples, where each tuple represents an unused
             import statement in the form (line_number, import_statement_string).
         dry_run (bool): If True, perform a dry run without modifying the file.
+
+    Returns:
+        bool: False when the file could not be read, backed up, or
+        written, or when the rewritten text did not parse.
     """
     if not unused_imports:
         logging.info("No unused imports found.")
-        return
+        return True
 
     try:
         with open(filepath, "r") as f:
             lines = f.readlines()
     except IOError as e:
         logging.error(f"Error reading file: {filepath} - {e}")
-        return
+        return False
 
     lines_to_remove = set()
     for line_number, _statement, end_line in unused_imports:
@@ -133,20 +152,45 @@ def remove_unused_imports(filepath, unused_imports, dry_run=False):
         line for i, line in enumerate(lines, 1) if i not in lines_to_remove
     ]
 
+    # The rewritten text has to parse before anything is written.
+    # If it does not, the file is left exactly as it was.
+    try:
+        ast.parse("".join(new_lines))
+    except SyntaxError as e:
+        logging.error(f"Refusing to write {filepath}: the rewritten text does not parse - {e}")
+        return False
+
     if dry_run:
         logging.info("Dry run: The following import statements would be removed:")
         for line_number, import_statement, _end in unused_imports:
             logging.info(f"Line {line_number}: {import_statement.strip()}")
-    else:
-        try:
-            with open(filepath, "w") as f:
-                f.writelines(new_lines)
-            logging.info(f"Removed unused imports from {filepath}")
-            for line_number, import_statement, _end in unused_imports:
-                logging.info(f"Removed: Line {line_number}: {import_statement.strip()}")
+        return True
 
-        except IOError as e:
-            logging.error(f"Error writing to file: {filepath} - {e}")
+    # A run that applies changes overwrites the only copy of the
+    # file, so a backup is written next to it first. An existing
+    # backup is never overwritten: it may be the only copy of an
+    # earlier original.
+    backup_path = filepath + ".bak"
+    if os.path.exists(backup_path):
+        logging.error(f"Refusing to modify {filepath}: backup already exists at {backup_path}")
+        return False
+    try:
+        shutil.copyfile(filepath, backup_path)
+    except OSError as e:
+        logging.error(f"Error writing backup file: {backup_path} - {e}")
+        return False
+    logging.info(f"Backup written to {backup_path}")
+
+    try:
+        with open(filepath, "w") as f:
+            f.writelines(new_lines)
+        logging.info(f"Removed unused imports from {filepath}")
+        for line_number, import_statement, _end in unused_imports:
+            logging.info(f"Removed: Line {line_number}: {import_statement.strip()}")
+    except IOError as e:
+        logging.error(f"Error writing to file: {filepath} - {e}")
+        return False
+    return True
 
 
 def main():
@@ -174,7 +218,11 @@ def main():
             # The file could not be read or parsed. Reporting success
             # here would claim a clean file that was never examined.
             sys.exit(1)
-        remove_unused_imports(filepath, unused_imports, dry_run)
+        if not remove_unused_imports(filepath, unused_imports, dry_run):
+            # The file could not be backed up or written, or the
+            # rewritten text did not parse. Exiting 0 here would
+            # report a change that never happened.
+            sys.exit(1)
     except Exception as e:
         logging.error(f"An unexpected error occurred: {e}")
         logging.error(traceback.format_exc()) # Log the full traceback for debugging
