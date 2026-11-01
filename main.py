@@ -73,10 +73,10 @@ def find_unused_imports(filepath, aggressive=False):
     used_names = set()
     for node in ast.walk(tree):
         if isinstance(node, ast.Name):
-            # I collect Name nodes wherever they sit, including inside the
-            # import statements themselves being absent here because an
-            # Import node holds aliases, not Names. A name used only in a
-            # type annotation still counts, which is the safe direction.
+            # I collect Name nodes wherever they sit in the tree. The
+            # import statements themselves contribute none, because an
+            # Import node holds aliases, not Names. A name used only in
+            # a type annotation still counts, which is the safe direction.
             used_names.add(node.id)
 
     if not aggressive:
