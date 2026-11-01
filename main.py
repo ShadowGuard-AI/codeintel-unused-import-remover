@@ -47,6 +47,11 @@ def find_unused_imports(filepath, aggressive=False):
             - The parsed AST of the Python file.
     """
     try:
+        # I read the file a second time here rather than passing the
+        # lines across from the finder. If the file changes between
+        # the two reads, the line numbers from the finder can point
+        # at different imports in this copy, which the parse check
+        # below only partly guards against.
         with open(filepath, "r") as f:
             content = f.read()
     except FileNotFoundError:
@@ -68,6 +73,10 @@ def find_unused_imports(filepath, aggressive=False):
     used_names = set()
     for node in ast.walk(tree):
         if isinstance(node, ast.Name):
+            # I collect Name nodes wherever they sit, including inside the
+            # import statements themselves being absent here because an
+            # Import node holds aliases, not Names. A name used only in a
+            # type annotation still counts, which is the safe direction.
             used_names.add(node.id)
 
     if not aggressive:
@@ -160,6 +169,9 @@ def remove_unused_imports(filepath, unused_imports, dry_run=False):
         logging.error(f"Refusing to write {filepath}: the rewritten text does not parse - {e}")
         return False
 
+    # The dry run still does the backup free path only after the
+    # parse check above, so a dry run can fail on a file whose
+    # rewrite would not parse, even though nothing is written.
     if dry_run:
         logging.info("Dry run: The following import statements would be removed:")
         for line_number, import_statement, _end in unused_imports:
