@@ -1,13 +1,50 @@
-<!doctype html><html lang="en-GB"><head><meta charset="utf-8"><title>codeintel-unused-import-remover</title>
-<style>@font-face{font-family:Disp;src:url(fonts/Bhavuka.ttf)}@font-face{font-family:Text;src:url(fonts/Archivo.ttf)}
-body{background:#f4ecd6;font-family:Text,serif;color:#1d1d20;margin:0}main{max-width:920px;margin:0 auto;padding:28px}
-h1,h2{font-family:Disp,sans-serif;color:#6e2a30}section{background:#f0dede;padding:18px 22px;margin:16px 0;border-radius:6px}
-img{max-width:100%}button{background:#6e2a30;color:#fff;border:2px solid #b28e3e;padding:10px 14px;margin:4px;border-radius:6px;font-family:Text}
-.flagged{color:#b28e3e;font-weight:bold}</style></head><body><main>
-<img src="intro-banner.png" alt="Rock, rail foot, and the bottom gate in the foreground, the stepped car halted on the incline with guests&#x27; cases inside, and the cliff top hotel and sky in the background, with no text, no letters, no wordmark, and no logo"><h1>codeintel-unused-import-remover</h1>
-<p>Theme: Funicular of the Cliff Hotel. Headings in Bhavuka, running text in Archivo.</p>
-<img src="logo.png" alt="One cliff funicular car with a stepped cabin, level floor, sloping roof steps, two small wheels on a single inclined rail, and the name lettered below as a timetable entry"><img src="banner.png" alt="A cliff face with the hotel at the top, one inclined track, the stepped car midway with its lamp lit, the top platform with a bell and a luggage trolley, the bottom gate and ticket window, and the name on the hotel sign board">
-<img src="scene.svg" alt="The funicular in three bands: hotel windows lighting one by one, the car climbing the rail to the top platform and descending once to the bottom gate, and a timetable card lifting at one corner and settling"><div><button type="button">Remove Unused Imports</button><button type="button">Run Without Writing</button><button type="button">Use the Aggressive Setting</button><button type="button">Show Help</button></div><section><h2>One File at a Time</h2><p>The program removes unused import statements from one Python file. A file path is required; nothing runs without it. The file is read and the code is parsed with ast. Every Name identifier is collected as a use. Import and ImportFrom nodes supply the bindings. An alias binding is its asname, or the first part of its dotted name. A star import is skipped, since it binds names this pass cannot list. The code uses the standard library only.</p></section><section><h2>Names That Count as Used</h2><p>Names inside string constants also count as used, so a lazy path, an export list, and a getattr target survive a plain run. The option named aggressive drops that string net, and indirect uses may then be removed. An unused import on a line with another statement is skipped and logged as skipped; a semicolon line counts as shared, removal takes whole lines only, one used alias on a line saves the whole line, and a parenthesised import spanning several lines is removed across its whole span.</p></section><section><h2>The Backup Comes First</h2><p>On a dry run no file changes, the parse check still runs first, and a rewrite that would not parse fails the dry run too; removals are listed in the log. On a writing run the rewritten text is parsed before writing and failure means no write. A backup is copied first, its name being the file name plus the suffix .bak. An existing backup stops the run, the exit is 1, and the file stays untouched.</p></section><section><h2>How a Run Can End</h2><p>Missing file: 1. Unreadable file: 1. Syntax error in the source: 1. Backup or write failure: 1. Success: 0. A non Python suffix draws a warning and the run proceeds anyway.</p></section>
-<section><h2>Record preserved from the README</h2><p># codeintel-Unused-Import-Remover</p><p>Removes unused import statements from Python code to reduce code clutter and improve readability. - Focused on Tools for static code analysis, vulnerability scanning, and code quality assurance</p><p>## Install</p><p>`git clone https://github.com/ShadowGuardAI/codeintel-unused-import-remover`</p><p>## Usage</p><p>`./codeintel-unused-import-remover [params]`</p><p>## Parameters</p><p>- `-h`: Show help message and exit</p><p>- `--dry-run`: Perform a dry run without modifying the file.</p><p>- `--aggressive`: No description provided</p><p>## How a run changes your file</p><p>A run that is not a dry run rewrites the named file in place. Before it writes, it saves a backup copy next to the target with a `.bak` suffix (for example `app.py.bak`) and logs that path. If a backup with that name already exists, the run refuses to modify the file and exits 1, because that backup may be the only copy of an earlier original. Move or rename the old backup if you want to run the tool on that file again. The rewritten text is parsed before it is written, and a run whose file cannot be written exits 1. An import that shares a line with another statement, for example behind a semicolon, is skipped for safety and listed as skipped in the log.</p><p>## License</p><p>Copyright (c) ShadowGuardAI</p></section>
-<section><h2>Facts from the code, stated in the prose</h2><p>This record names: ast, Name identifier, ImportFrom, asname, star import, string constants, .bak, semicolon, parenthesised import, standard library only.</p></section>
-</main></body></html>
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>codeintel-unused-import-remover: The Thinning Bench</title>
+<style>@font-face{font-family:'Pompiere';src:url('fonts/Pompiere.ttf') format('truetype');font-weight:400;font-style:normal;}@font-face{font-family:'Tauri';src:url('fonts/Tauri.ttf') format('truetype');font-weight:400;font-style:normal;}
+:root{--ground:#232b22;--panel:#2f3a2e;--head:#eef3e6;--ink:#e6ecdc;--accent:#8fce62}
+*{box-sizing:border-box}body{margin:0;background:var(--ground);color:var(--ink);font-family:'Tauri',sans-serif;line-height:1.65}
+h1,h2,h3{font-family:'Pompiere',serif;color:var(--head)}
+.hero img.heroimg{width:100%;height:52vh;object-fit:cover;display:block}
+.hero .in,main,footer{max-width:1120px;margin:0 auto;padding:1rem 6vw 2rem}.logo{width:210px}
+nav{display:flex;gap:1rem;flex-wrap:wrap;margin:1.2rem 0}
+.btn{display:inline-block;text-decoration:none;font-family:'Pompiere',serif;color:var(--head);background:var(--panel);border:2px solid var(--accent);border-radius:10px;padding:.6rem 1.1rem}
+.btn:hover{border-color:var(--head)}.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+a{color:var(--head)}.panel{background:var(--panel);color:var(--ink);padding:.4rem 1.5rem 1.3rem;margin:1.8rem 0;border-radius:6px}
+pre{background:#171d16;color:var(--ink);padding:1rem;overflow-x:auto;white-space:pre-wrap}
+.flag{border-left:5px solid var(--accent);background:rgba(0,0,0,.18);padding:.6rem 1rem}
+img.rule{width:100%;height:120px;object-fit:cover;display:block}img.diag{max-width:100%}
+code{font-family:inherit;background:rgba(0,0,0,.25);padding:0 .3rem;border-radius:3px}</style>
+</head>
+<body>
+<header class="hero"><img class="heroimg" src="intro-banner.png" alt="Fingers holding one lifted seedling close up, its fine roots and compost hanging free, the even kept row of sprouts behind it in the tray and lifted seedlings resting on a saucer at the frame edge">
+<div class="in"><img class="logo" src="logo.png" alt="One hand holding a single lifted seedling with its roots dangling above a black seed tray of even green sprouts">
+<h1>codeintel-unused-import-remover</h1>
+<p>Surplus seedlings lifted out one by one and kept on a saucer beside the tray, the kept row standing even and untouched.</p>
+<nav><a class="btn" href="#used">What counts as used</a><a class="btn" href="#lines">Line rules</a><a class="btn" href="#backup">The backup rule</a><a class="btn" href="#params">Parameters</a></nav></div></header>
+<main>
+<img class="rule" src="banner.png" alt="A gardener thinning a seed tray on a glasshouse bench, lifting out surplus seedlings and laying them on a saucer beside the tray, the kept row standing even, plain blank marker sticks in the trays behind">
+<section class="panel"><h2>What the remover does</h2>
+<p>The tool rewrites one Python file in place with its unused import lines removed, run as <code>python3 main.py FILEPATH [--dry-run] [--aggressive]</code>. filepath is a required positional. Lines are only ever dropped whole.</p></section><section class="panel" id="used"><h2>What counts as used</h2>
+<p>Usage is judged from the syntax tree: a binding counts as used when its root name appears as a Name anywhere in the file. In non-aggressive mode a second net is laid, in which any binding mentioned inside a string constant, a lazy import path, an export list, or a getattr target is kept too, because words in string constants are treated as used. The --aggressive flag drops that net, which is all the flag changes.</p>
+<p class="flag">Star imports are never listed and never removed.</p></section><section class="panel" id="lines"><h2>Line rules</h2>
+<p>When one alias on a shared import line is still used, the whole line stays. An unused import sharing a line with another statement is skipped and logged as skipped rather than removed. A parenthesised import is removed across its full span of lines.</p></section><section class="panel" id="backup"><h2>The backup rule</h2>
+<p class="flag">A real run first writes a backup at the filepath plus .bak, and refuses if that backup already exists: if it does, the run refuses to modify the file and exits 1, because the old backup may be the only copy of an earlier original.</p>
+<p>The rewritten text is parsed before anything is written, and a rewrite that would not parse is refused with the file untouched. A dry run still runs that parse check, so a dry run can fail on a file it would never have written. A file without a .py ending draws a warning and is processed anyway. An unreadable or unparsable target exits 1.</p></section><section class="panel" id="params"><h2>Parameters</h2>
+<ul>
+<li><code>filepath</code>: the Python file to rewrite. Required.</li>
+<li><code>--dry-run</code>: perform a dry run without modifying the file.</li>
+<li><code>--aggressive</code>: drop the string constant safety net described above.</li>
+</ul>
+<p>The README parameter list omits filepath and leaves --aggressive undescribed, though the code help text describes it. That record stands as printed.</p></section><section class="panel"><h2>Record notes</h2>
+<p>The README clone line uses the unhyphenated ShadowGuardAI, its usage line is a placeholder, and its closing licence line reads Copyright (c) ShadowGuardAI while the LICENSE file is MIT. Those lines stand as printed.</p></section>
+
+<section class="panel"><h2>Licence</h2>
+<p>The repository LICENSE file carries the MIT License.</p></section>
+</main>
+<footer><p>The Thinning Bench. Headings in Pompiere, text in Tauri, both under the SIL Open Font License 1.1.</p></footer>
+</body>
+</html>

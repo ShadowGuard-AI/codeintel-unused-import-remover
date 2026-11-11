@@ -1,12 +1,12 @@
-![Rock, rail foot, and the bottom gate in the foreground, the stepped car halted on the incline with guests' cases inside, and the cliff top hotel and sky in the background, with no text, no letters, no wordmark, and no logo](intro-banner.png)
+![Fingers holding one lifted seedling close up, its fine roots and compost hanging free, the even kept row of sprouts behind it in the tray and lifted seedlings resting on a saucer at the frame edge](intro-banner.png)
 
 # codeintel-Unused-Import-Remover
 
 Title block: the name above is set in Bhavuka in sleeper maroon on corridor cream, ruled beneath like a timetable entry. The car mark below stands beside this first heading only.
 
-![One cliff funicular car with a stepped cabin, level floor, sloping roof steps, two small wheels on a single inclined rail, and the name lettered below as a timetable entry](logo.png)
+![One hand holding a single lifted seedling with its roots dangling above a black seed tray of even green sprouts](logo.png)
 
-![A cliff face with the hotel at the top, one inclined track, the stepped car midway with its lamp lit, the top platform with a bell and a luggage trolley, the bottom gate and ticket window, and the name on the hotel sign board](banner.png)
+![A gardener thinning a seed tray on a glasshouse bench, lifting out surplus seedlings and laying them on a saucer beside the tray, the kept row standing even, plain blank marker sticks in the trays behind](banner.png)
 
 ![The funicular in three bands: hotel windows lighting one by one, the car climbing the rail to the top platform and descending once to the bottom gate, and a timetable card lifting at one corner and settling](scene.svg)
 
